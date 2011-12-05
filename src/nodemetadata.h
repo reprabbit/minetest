@@ -92,6 +92,7 @@ public:
 
 	virtual void setRemovalDisabled(bool b){};
 	virtual void setEnforceOwner(bool b){};
+	virtual void setInfotextIsText(bool b){};
 
 	virtual bool isInventoryModified(){return false;};
 	virtual void resetInventoryModified(){};

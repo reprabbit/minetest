@@ -1365,6 +1365,8 @@ private:
 		if(meta == NULL) return 0;
 		// Do it
 		std::string text = luaL_checkstring(L, 2);
+		if(text == meta->getText())
+			return 0;
 		meta->setText(text);
 		reportMetadataChange(ref);
 		return 0;
@@ -1404,6 +1406,8 @@ private:
 		if(meta == NULL) return 0;
 		// Do it
 		std::string text = luaL_checkstring(L, 2);
+		if(text == meta->infoText())
+			return 0;
 		meta->setInfoText(text);
 		reportMetadataChange(ref);
 		return 0;
@@ -1471,6 +1475,8 @@ private:
 		if(meta == NULL) return 0;
 		// Do it
 		bool b = lua_toboolean(L, 2);
+		if(b == meta->nodeRemovalDisabled())
+			return 0;
 		meta->setAllowTextInput(b);
 		reportMetadataChange(ref);
 		return 0;
@@ -1520,6 +1526,8 @@ private:
 		NodeMetadata *meta = getmeta(ref);
 		if(meta == NULL) return 0;
 		// Do it
+		if(!meta->isInventoryModified())
+			return 0;
 		meta->resetInventoryModified();
 		reportMetadataChange(ref);
 		return 0;
@@ -1543,6 +1551,8 @@ private:
 		NodeMetadata *meta = getmeta(ref);
 		if(meta == NULL) return 0;
 		// Do it
+		if(!meta->isTextModified())
+			return 0;
 		meta->resetTextModified();
 		reportMetadataChange(ref);
 		return 0;
@@ -1559,6 +1569,8 @@ private:
 		size_t len = 0;
 		const char *s = lua_tolstring(L, 3, &len);
 		std::string str(s, len);
+		if(str == meta->getString(name))
+			return 0;
 		meta->setString(name, str);
 		reportMetadataChange(ref);
 		return 0;
@@ -1574,6 +1586,36 @@ private:
 		std::string name = luaL_checkstring(L, 2);
 		std::string str = meta->getString(name);
 		lua_pushlstring(L, str.c_str(), str.size());
+		return 1;
+	}
+
+	// set_int(self, name, var)
+	static int l_set_int(lua_State *L)
+	{
+		NodeMetaRef *ref = checkobject(L, 1);
+		NodeMetadata *meta = getmeta(ref);
+		if(meta == NULL) return 0;
+		// Do it
+		std::string name = lua_tostring(L, 2);
+		int a = lua_tointeger(L, 3);
+		std::string str = itos(a);
+		if(str == meta->getString(name))
+			return 0;
+		meta->setString(name, str);
+		reportMetadataChange(ref);
+		return 0;
+	}
+
+	// get_int(self, name)
+	static int l_get_int(lua_State *L)
+	{
+		NodeMetaRef *ref = checkobject(L, 1);
+		NodeMetadata *meta = getmeta(ref);
+		if(meta == NULL) return 0;
+		// Do it
+		std::string name = lua_tostring(L, 2);
+		std::string str = meta->getString(name);
+		lua_pushnumber(L, stoi(str));
 		return 1;
 	}
 
@@ -1648,6 +1690,8 @@ const luaL_reg NodeMetaRef::methods[] = {
 	method(NodeMetaRef, reset_text_modified),
 	method(NodeMetaRef, set_string),
 	method(NodeMetaRef, get_string),
+	method(NodeMetaRef, set_int),
+	method(NodeMetaRef, get_int),
 	{0,0}
 };
 

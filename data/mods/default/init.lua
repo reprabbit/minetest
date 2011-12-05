@@ -62,7 +62,7 @@
 -- functions, you can use them to store arbitrary values.
 --
 -- param1 is reserved for the engine when:
---   paramtype != "none"
+--   paramtype ~= "none"
 -- param2 is reserved for the engine when any of these are used:
 --   liquidtype == "flowing"
 --   drawtype == "flowingliquid"
@@ -1157,54 +1157,6 @@ minetest.register_node("default:torch", {
 	furnace_burntime = 4,
 })
 
-minetest.register_node("default:sign_wall", {
-	drawtype = "signlike",
-	tile_images = {"default_sign_wall.png"},
-	inventory_image = "default_sign_wall.png",
-	paramtype = "light",
-	sunlight_propagates = true,
-	walkable = false,
-	wall_mounted = true,
-	metadata_name = "sign",
-	selection_box = {
-		type = "wallmounted",
-		--wall_top = <default>
-		--wall_bottom = <default>
-		--wall_side = <default>
-	},
-	material = minetest.digprop_constanttime(0.5),
-	furnace_burntime = 10,
-})
-
-minetest.register_node("default:chest", {
-	tile_images = {"default_chest_top.png", "default_chest_top.png", "default_chest_side.png",
-		"default_chest_side.png", "default_chest_side.png", "default_chest_front.png"},
-	inventory_image = minetest.inventorycube("default_chest_top.png", "default_chest_front.png", "default_chest_side.png"),
-	paramtype = "facedir_simple",
-	metadata_name = "chest",
-	material = minetest.digprop_woodlike(1.0),
-	furnace_burntime = 30,
-})
-
-minetest.register_node("default:chest_locked", {
-	tile_images = {"default_chest_top.png", "default_chest_top.png", "default_chest_side.png",
-		"default_chest_side.png", "default_chest_side.png", "default_chest_lock.png"},
-	inventory_image = minetest.inventorycube("default_chest_top.png", "default_chest_lock.png", "default_chest_side.png"),
-	paramtype = "facedir_simple",
-	metadata_name = "locked_chest",
-	material = minetest.digprop_woodlike(1.0),
-	furnace_burntime = 30,
-})
-
-minetest.register_node("default:furnace", {
-	tile_images = {"default_furnace_side.png", "default_furnace_side.png", "default_furnace_side.png",
-		"default_furnace_side.png", "default_furnace_side.png", "default_furnace_front.png"},
-	inventory_image = minetest.inventorycube("default_furnace_side.png", "default_furnace_front.png", "default_furnace_side.png"),
-	paramtype = "facedir_simple",
-	metadata_name = "furnace",
-	material = minetest.digprop_stonelike(3.0),
-})
-
 minetest.register_node("default:cobble", {
 	tile_images = {"default_cobble.png"},
 	inventory_image = minetest.inventorycube("default_cobble.png"),
@@ -1265,6 +1217,252 @@ minetest.register_node("default:apple", {
 	dug_item = 'craft "default:apple" 1',
 	material = minetest.digprop_constanttime(0.0),
 	furnace_burntime = 3,
+})
+
+--
+-- Special nodes
+--
+
+minetest.register_node("default:sign_wall", {
+	drawtype = "signlike",
+	tile_images = {"default_sign_wall.png"},
+	inventory_image = "default_sign_wall.png",
+	paramtype = "light",
+	sunlight_propagates = true,
+	walkable = false,
+	wall_mounted = true,
+	metadata_name = "generic",
+	selection_box = {
+		type = "wallmounted",
+		--wall_top = <default>
+		--wall_bottom = <default>
+		--wall_side = <default>
+	},
+	material = minetest.digprop_constanttime(0.5),
+	furnace_burntime = 10,
+})
+
+-- Add metadata to signs when placed
+minetest.register_on_placenode(function(pos, newnode, placer)
+	if newnode.name == "default:sign_wall" then
+		local meta = minetest.env:get_meta(pos)
+		meta:set_text("An empty sign.")
+		meta:set_infotext("An empty sign.")
+	end
+end)
+
+-- TODO: Add a sane callback for metadata modification
+-- ABM for updating the info text of signs to correspond to the
+-- user-modifiable text property
+minetest.register_abm({
+	nodenames = {"default:sign_wall"},
+	interval = 1.0,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		local meta = minetest.env:get_meta(pos)
+		meta:set_infotext(meta:get_text())
+	end,
+})
+
+minetest.register_node("default:chest", {
+	tile_images = {"default_chest_top.png", "default_chest_top.png", "default_chest_side.png",
+		"default_chest_side.png", "default_chest_side.png", "default_chest_front.png"},
+	inventory_image = minetest.inventorycube("default_chest_top.png", "default_chest_front.png", "default_chest_side.png"),
+	paramtype = "facedir_simple",
+	metadata_name = "generic",
+	material = minetest.digprop_woodlike(1.0),
+	furnace_burntime = 30,
+})
+
+-- Add metadata to chests when placed
+minetest.register_on_placenode(function(pos, newnode, placer)
+	if newnode.name == "default:chest" then
+		local meta = minetest.env:get_meta(pos)
+		local list = {}
+		for i=1,40 do list.insert("") end
+		meta:inventory_set_list("0", list)
+		meta:set_inventory_draw_spec("invsize[8,9;]"
+				.."list[current_name;0;0,0;8,4;]"
+				.."list[current_player;main;0,5;8,4;]")
+	end
+end)
+
+minetest.register_node("default:chest_locked", {
+	tile_images = {"default_chest_top.png", "default_chest_top.png", "default_chest_side.png",
+		"default_chest_side.png", "default_chest_side.png", "default_chest_lock.png"},
+	inventory_image = minetest.inventorycube("default_chest_top.png", "default_chest_lock.png", "default_chest_side.png"),
+	paramtype = "facedir_simple",
+	metadata_name = "generic",
+	material = minetest.digprop_woodlike(1.0),
+	furnace_burntime = 30,
+})
+
+-- Add metadata to locked chests when placed
+minetest.register_on_placenode(function(pos, newnode, placer)
+	if newnode.name == "default:chest_locked" then
+		local meta = minetest.env:get_meta(pos)
+		local list = {}
+		for i=1,40 do list.insert("") end
+		meta:inventory_set_list("0", list)
+		meta:set_inventory_draw_spec("invsize[8,9;]"
+				.."list[current_name;0;0,0;8,4;]"
+				.."list[current_player;main;0,5;8,4;]")
+		meta:set_enforce_owner(true)
+	end
+end)
+
+minetest.register_node("default:furnace", {
+	tile_images = {"default_furnace_side.png", "default_furnace_side.png", "default_furnace_side.png",
+		"default_furnace_side.png", "default_furnace_side.png", "default_furnace_front.png"},
+	inventory_image = minetest.inventorycube("default_furnace_side.png", "default_furnace_front.png", "default_furnace_side.png"),
+	paramtype = "facedir_simple",
+	metadata_name = "generic",
+	material = minetest.digprop_stonelike(3.0),
+})
+
+-- Add metadata to furnaces when placed
+minetest.register_on_placenode(function(pos, newnode, placer)
+	if newnode.name == "default:furnace" then
+		local meta = minetest.env:get_meta(pos)
+		meta:inventory_set_list("fuel", {""})
+		meta:inventory_set_list("src", {""})
+		meta:inventory_set_list("dst", {"","","",""})
+		meta:set_inventory_draw_spec(
+			"invsize[8,9;]"
+			.."list[current_name;fuel;2,3;1,1;]"
+			.."list[current_name;src;2,1;1,1;]"
+			.."list[current_name;dst;5,1;2,2;]"
+			.."list[current_player;main;0,5;8,4;]"
+		)
+	end
+end)
+
+-- Handle furnace
+minetest.register_abm({
+	nodenames = {"default:furnace"},
+	interval = 1.0,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		local meta = minetest.env:get_meta(pos)
+		for i, name in ipairs({
+				"fuel_totaltime",
+				"fuel_time",
+				"src_totaltime",
+				"src_time"
+		}) do
+			if meta:get_int(name) == nil then
+				meta:set_int(name, 0)
+			end
+		end
+		local fuellist = meta:inventory_get_list("fuel")
+		local srclist = meta:inventory_get_list("src")
+		local dstlist = meta:inventory_get_list("dst")
+		
+		_, srcitem = stackstring_take_item(srclist[1])
+		_, fuelitem = stackstring_take_item(fuellist[1])
+
+		local src_cooktime = -1
+		local resultstack = nil
+		
+		if srcitem then
+			if srcitem.type == "node" then
+				local prop = minetest.registered_nodes[srcitem.name]
+				if prop and prop.cookresult_itemstring ~= "" then
+					resultstack = prop.cookresult_itemstring
+					src_cooktime = prop.furnace_cooktime or 3
+				end
+			elseif srcitem.type == "craft" then
+				local prop = minetest.registered_craftitems[srcitem.name]
+				if prop and prop.cookresult_itemstring ~= "" then
+					resultstack = prop.cookresult_itemstring
+					src_cooktime = prop.furnace_cooktime or 3
+				end
+			end
+		end
+
+		if meta:get_int("fuel_time") < meta:get_int("fuel_totaltime") then
+			meta:set_int("fuel_time", meta:get_int("fuel_time") + 1)
+			meta:set_int("src_time", meta:get_int("src_time") + 1)
+			print("resultstack="..dump(resultstack))
+			print('meta:get_int("src_time")='..dump(meta:get_int("src_time")))
+			print("src_cooktime="..dump(src_cooktime))
+			if resultstack and meta:get_int("src_time") >= src_cooktime
+					and src_cooktime >= 0 then
+				for i=1,4 do
+					dstlist[i], success = stackstring_put_stackstring(
+							dstlist[i], resultstack)
+					srclist[1], _ = stackstring_take_item(srclist[1])
+					if success then
+						break
+					end
+				end
+				meta:inventory_set_list("src", srclist)
+				meta:inventory_set_list("dst", dstlist)
+				meta:set_int("src_time", 0)
+			end
+		end
+		
+		if meta:get_int("fuel_time") < meta:get_int("fuel_totaltime") then
+			meta:set_infotext("Furnace active: "..(meta:get_int("fuel_time")/meta:get_int("fuel_totaltime")*100).."%")
+			return
+		end
+
+		local srclist = meta:inventory_get_list("src")
+		_, srcitem = stackstring_take_item(srclist[1])
+
+		local src_cooktime = 0
+		local resultstack = nil
+		
+		if srcitem then
+			if srcitem.type == "node" then
+				local prop = minetest.registered_nodes[srcitem.name]
+				if prop and prop.cookresult_itemstring ~= "" then
+					resultstack = prop.cookresult_itemstring
+					src_cooktime = prop.furnace_cooktime or 3
+				end
+			elseif srcitem.type == "craft" then
+				local prop = minetest.registered_craftitems[srcitem.name]
+				if prop and prop.cookresult_itemstring ~= "" then
+					resultstack = prop.cookresult_itemstring
+					src_cooktime = prop.furnace_cooktime or 3
+				end
+			end
+		end
+
+		if resultstack == nil then
+			meta:set_infotext("Furnace is empty")
+			return
+		end
+
+		local fuellist = meta:inventory_get_list("fuel")
+		_, fuelitem = stackstring_take_item(fuellist[1])
+
+		local burntime = -1
+		if fuelitem then
+			if fuelitem.type == "node" then
+				local prop = minetest.registered_nodes[fuelitem.name]
+				if prop then
+					burntime = prop.furnace_burntime or -1
+				end
+			elseif fuelitem.type == "craft" then
+				local prop = minetest.registered_craftitems[fuelitem.name]
+				if prop then
+					burntime = prop.furnace_burntime or -1
+				end
+			end
+		end
+
+		if burntime <= 0 then
+			meta:set_infotext("Furnace out of fuel")
+			return
+		end
+
+		meta:set_int("fuel_totaltime", burntime)
+		meta:set_int("fuel_time", 0)
+
+		fuellist[1], _ = stackstring_take_item(fuellist[1])
+		meta:inventory_set_list("fuel", fuellist)
+	end,
 })
 
 --

@@ -35,6 +35,7 @@ class Inventory;
 core::map<u16, NodeMetadata::Factory> NodeMetadata::m_types;
 core::map<std::string, NodeMetadata::Factory2> NodeMetadata::m_names;
 
+#if 0
 class SignNodeMetadata : public NodeMetadata
 {
 public:
@@ -535,6 +536,7 @@ std::string FurnaceNodeMetadata::getInventoryDrawSpecString()
 		"list[current_name;dst;5,1;2,2;]"
 		"list[current_player;main;0,5;8,4;]";
 }
+#endif
 
 /*
 	GenericNodeMetadata
@@ -575,7 +577,7 @@ public:
 		m_text(""),
 		m_owner(""),
 
-		m_infotext("GenericNodeMetadata"),
+		m_infotext(""),
 		m_inventorydrawspec(""),
 		m_allow_text_input(false),
 		m_removal_disabled(false),
@@ -757,8 +759,124 @@ public:
 			return "";
 		return i->second;
 	}
+
+	friend class LegacyNodeMetadataDefiner;
 };
 
 // Prototype
 GenericNodeMetadata proto_GenericNodeMetadata(NULL);
 
+/*
+	Legacy NodeMetadata loading support
+
+	Converts old NodeMetadata types into GenericNodeMetadata which are
+	handled by the default mod
+*/
+
+class LegacyNodeMetadataDefiner
+{
+public:
+	LegacyNodeMetadataDefiner()
+	{
+		NodeMetadata::registerType(NODEMETA_SIGN, "sign",
+				createSign, createSign);
+		NodeMetadata::registerType(NODEMETA_CHEST, "chest",
+				createChest, createChest);
+		NodeMetadata::registerType(NODEMETA_LOCKABLE_CHEST, "locked_chest",
+				createLockedChest, createLockedChest);
+		NodeMetadata::registerType(NODEMETA_FURNACE, "furnace",
+				createFurnace, createFurnace);
+	}
+	/* Sign */
+	static NodeMetadata* createSign(IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_infotext = "An empty sign.";
+		d->m_text = "An empty sign.";
+		d->m_allow_text_input = true;
+		return d;
+	}
+	static NodeMetadata* createSign(std::istream &is, IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_text = deSerializeLongString(is);
+		d->m_allow_text_input = true;
+		return d;
+	}
+	/* Chest */
+	static NodeMetadata* createChest(IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_inventory->addList("0", 8*4);
+		d->m_inventorydrawspec = "invsize[8,9;]"
+				"list[current_name;0;0,0;8,4;]"
+				"list[current_player;main;0,5;8,4;]";
+		return d;
+	}
+	static NodeMetadata* createChest(std::istream &is, IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_inventory->deSerialize(is, gamedef);
+		d->m_inventorydrawspec = "invsize[8,9;]"
+				"list[current_name;0;0,0;8,4;]"
+				"list[current_player;main;0,5;8,4;]";
+		return d;
+	}
+	/* LockedChest */
+	static NodeMetadata* createLockedChest(IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_owner = "";
+		d->m_inventory->addList("0", 8*4);
+		d->m_inventorydrawspec = "invsize[8,9;]"
+				"list[current_name;0;0,0;8,4;]"
+				"list[current_player;main;0,5;8,4;]";
+		d->m_enforce_owner = true;
+		return d;
+	}
+	static NodeMetadata* createLockedChest(std::istream &is, IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_owner = deSerializeString(is);
+		d->m_inventory->deSerialize(is, gamedef);
+		d->m_inventorydrawspec = "invsize[8,9;]"
+				"list[current_name;0;0,0;8,4;]"
+				"list[current_player;main;0,5;8,4;]";
+		d->m_enforce_owner = true;
+		return d;
+	}
+	/* Furnace */
+	static NodeMetadata* createFurnace(IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_inventory->addList("fuel", 1);
+		d->m_inventory->addList("src", 1);
+		d->m_inventory->addList("dst", 4);
+		d->m_inventorydrawspec = "invsize[8,9;]"
+			"list[current_name;fuel;2,3;1,1;]"
+			"list[current_name;src;2,1;1,1;]"
+			"list[current_name;dst;5,1;2,2;]"
+			"list[current_player;main;0,5;8,4;]";
+		return d;
+	}
+	static NodeMetadata* createFurnace(std::istream &is, IGameDef *gamedef)
+	{
+		GenericNodeMetadata *d = new GenericNodeMetadata(gamedef);
+		d->m_inventory->deSerialize(is, gamedef);
+		int temp;
+		is>>temp;
+		d->setString("fuel_totaltime", ftos((float)temp/10));
+		is>>temp;
+		d->setString("fuel_time", ftos((float)temp/10));
+		d->m_inventorydrawspec = "invsize[8,9;]"
+			"list[current_name;fuel;2,3;1,1;]"
+			"list[current_name;src;2,1;1,1;]"
+			"list[current_name;dst;5,1;2,2;]"
+			"list[current_player;main;0,5;8,4;]";
+		return d;
+	}
+};
+
+LegacyNodeMetadataDefiner legacy_nodemeta_definer;
+
+// END
