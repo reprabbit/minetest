@@ -24,10 +24,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "audio.h"
 #include "camera.h"
-
 #include "filesys.h"
-
-#include "debug.h"
+#include "log.h"
 
 using std::nothrow;
 
@@ -91,7 +89,7 @@ SoundBuffer* SoundBuffer::loadOggFile(const std::string &fname)
 	OggVorbis_File oggFile;
 
 	if (cache.find(fname)) {
-		dstream << "Ogg file " << fname << " loaded from cache"
+		infostream << "Ogg file " << fname << " loaded from cache"
 			<< std::endl;
 		return cache[fname];
 	}
@@ -99,7 +97,7 @@ SoundBuffer* SoundBuffer::loadOggFile(const std::string &fname)
 	// Try opening the given file
 	if (ov_fopen(fname.c_str(), &oggFile) != 0)
 	{
-		dstream << "Error opening " << fname << " for decoding" << std::endl;
+		infostream << "Error opening " << fname << " for decoding" << std::endl;
 		return NULL;
 	}
 
@@ -126,7 +124,7 @@ SoundBuffer* SoundBuffer::loadOggFile(const std::string &fname)
 		if (bytes < 0)
 		{
 			ov_clear(&oggFile);
-			dstream << "Error decoding " << fname << std::endl;
+			infostream << "Error decoding " << fname << std::endl;
 			return NULL;
 		}
 
@@ -142,12 +140,12 @@ SoundBuffer* SoundBuffer::loadOggFile(const std::string &fname)
 	ALenum error = alGetError();
 
 	if (error != AL_NO_ERROR) {
-		dstream << "OpenAL error: " << alErrorString(error)
+		infostream << "OpenAL error: " << alErrorString(error)
 			<< "preparing sound buffer"
 			<< std::endl;
 	}
 
-	dstream << "Audio file " << fname << " loaded"
+	infostream << "Audio file " << fname << " loaded"
 		<< std::endl;
 	cache[fname] = snd;
 
@@ -220,29 +218,29 @@ Audio::Audio() :
 	m_context(NULL),
 	m_can_vorbis(false)
 {
-	dstream << "Initializing audio system" << std::endl;
+	infostream << "Initializing audio system" << std::endl;
 
 	ALCenum error = ALC_NO_ERROR;
 
 	m_device = alcOpenDevice(NULL);
 	if (!m_device) {
-		dstream << "No audio device available, audio system not initialized"
+		infostream << "No audio device available, audio system not initialized"
 			<< std::endl;
 		return;
 	}
 
 	if (alcIsExtensionPresent(m_device, "EXT_vorbis")) {
-		dstream << "Vorbis extension present, good" << std::endl;
+		infostream << "Vorbis extension present, good" << std::endl;
 		m_can_vorbis = true;
 	} else {
-		dstream << "Vorbis extension NOT present" << std::endl;
+		infostream << "Vorbis extension NOT present" << std::endl;
 		m_can_vorbis = false;
 	}
 
 	m_context = alcCreateContext(m_device, NULL);
 	if (!m_context) {
 		error = alcGetError(m_device);
-		dstream << "Unable to initialize audio context, aborting audio initialization"
+		infostream << "Unable to initialize audio context, aborting audio initialization"
 			<< " (" << alcErrorString(error) << ")"
 			<< std::endl;
 		alcCloseDevice(m_device);
@@ -252,7 +250,7 @@ Audio::Audio() :
 	if (!alcMakeContextCurrent(m_context) ||
 			(error = alcGetError(m_device) != ALC_NO_ERROR))
 	{
-		dstream << "Error setting audio context, aborting audio initialization"
+		infostream << "Error setting audio context, aborting audio initialization"
 			<< " (" << alcErrorString(error) << ")"
 			<< std::endl;
 		shutdown();
@@ -260,7 +258,7 @@ Audio::Audio() :
 
 	alDistanceModel(AL_EXPONENT_DISTANCE);
 
-	dstream << "Audio system initialized: OpenAL "
+	infostream << "Audio system initialized: OpenAL "
 		<< alGetString(AL_VERSION)
 		<< ", using " << alcGetString(m_device, ALC_DEVICE_SPECIFIER)
 		<< std::endl;
@@ -285,17 +283,17 @@ void Audio::shutdown()
 	alcCloseDevice(m_device);
 	m_device = NULL;
 
-	dstream << "OpenAL context and devices cleared" << std::endl;
+	infostream << "OpenAL context and devices cleared" << std::endl;
 }
 
 void Audio::init(const std::string &path)
 {
 	if (fs::PathExists(path)) {
 		m_path = path;
-		dstream << "Audio: using sound path " << path
+		infostream << "Audio: using sound path " << path
 			<< std::endl;
 	} else {
-		dstream << "WARNING: audio path " << path
+		infostream << "WARNING: audio path " << path
 			<< " not found, sounds will not be available."
 			<< std::endl;
 	}
@@ -343,9 +341,9 @@ AmbientSound *Audio::getAmbientSound(const std::string &basename)
 
 	SoundBuffer *data(loadSound(basename));
 	if (!data) {
-		dstream << "Ambient sound "
+		/*infostream << "Ambient sound "
 			<< " '" << basename << "' not available"
-			<< std::endl;
+			<< std::endl;*/
 		return NULL;
 	}
 
@@ -377,17 +375,17 @@ void Audio::setAmbient(const std::string &slotname,
 		if (was_playing || autoplay)
 			snd->play();
 		m_ambient_slot[slotname] = snd;
-		dstream << "Ambient " << slotname
+		infostream << "Ambient " << slotname
 			<< " switched to " << basename
 			<< std::endl;
 	} else {
 		// FIXME two-step assignment to cope with irrMap limitations
 		snd = m_ambient_sound[""];
 		m_ambient_slot[slotname] = snd;
-		dstream << "Ambient " << slotname
+		/*infostream << "Ambient " << slotname
 			<< " could not switch to " << basename
 			<< ", cleared"
-			<< std::endl;
+			<< std::endl;*/
 	}
 }
 
@@ -397,14 +395,14 @@ SoundSource *Audio::createSource(const std::string &sourcename,
 	SoundSourceMap::Node* present = m_sound_source.find(sourcename);
 
 	if (present) {
-		dstream << "WARNING: attempt to re-create sound source "
+		infostream << "WARNING: attempt to re-create sound source "
 			<< sourcename << std::endl;
 		return present->getValue();
 	}
 
 	SoundBuffer *data(loadSound(basename));
 	if (!data) {
-		dstream << "Sound source " << sourcename << " not available: "
+		infostream << "Sound source " << sourcename << " not available: "
 			<< basename << " could not be loaded"
 			<< std::endl;
 	}
@@ -422,7 +420,7 @@ SoundSource *Audio::getSource(const std::string &sourcename)
 	if (present)
 		return present->getValue();
 
-	dstream << "WARNING: attempt to get sound source " << sourcename
+	infostream << "WARNING: attempt to get sound source " << sourcename
 		<< " before it was created! Creating an empty one"
 		<< std::endl;
 
@@ -470,13 +468,13 @@ SoundBuffer* Audio::loadSound(const std::string &basename)
 	std::string fname(findSoundFile(basename, fmt));
 
 	if (fname.empty()) {
-		dstream << "WARNING: couldn't find audio file "
+		/*infostream << "WARNING: couldn't find audio file "
 			<< basename << " in " << m_path
-			<< std::endl;
+			<< std::endl;*/
 		return NULL;
 	}
 
-	dstream << "Audio file '" << basename
+	infostream << "Audio file '" << basename
 		<< "' found as " << fname
 		<< std::endl;
 
@@ -485,7 +483,7 @@ SoundBuffer* Audio::loadSound(const std::string &basename)
 		return SoundBuffer::loadOggFile(fname);
 	}
 
-	dstream << "WARNING: no appropriate loader found "
+	infostream << "WARNING: no appropriate loader found "
 		<< " for audio file " << fname
 		<< std::endl;
 
