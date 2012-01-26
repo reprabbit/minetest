@@ -457,6 +457,9 @@ void Audio::updateListener(const scene::ICameraSceneNode* cam, const v3f &vel)
 	alListenerfv(AL_POSITION, m_listener);
 	alListenerfv(AL_VELOCITY, m_listener + 3);
 	alListenerfv(AL_ORIENTATION, m_listener + 6);
+	// Lower the overall volume (actually only footstep volume should be
+	// lowered, but screw that as of now)
+	alListenerf(AL_GAIN, 0.3);
 }
 
 SoundBuffer* Audio::loadSound(const std::string &basename)
