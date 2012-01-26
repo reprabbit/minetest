@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "serialization.h" // For compressZlib
 #include "materials.h" // For MaterialProperties and ToolDiggingProperties
 #include "gamedef.h"
+#include "player.h"
 
 core::map<u16, ServerActiveObject::Factory> ServerActiveObject::m_types;
 

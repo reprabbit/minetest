@@ -31,6 +31,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "content_object.h"
 #include "mesh.h"
 #include "utility.h" // For IntervalLimiter
+#include "player.h"
 class Settings;
 
 core::map<u16, ClientActiveObject::Factory> ClientActiveObject::m_types;

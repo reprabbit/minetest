@@ -1903,6 +1903,43 @@ PlayerEnvStatus Client::getPlayerEnvStatus()
 	status.is_climbing = player->is_climbing;
 	status.swimming_up = player->swimming_up;
 
+	// Spaghetti for testing out sounds
+	content_t c_stone = m_nodedef->getId("stone");
+	content_t c_grass = m_nodedef->getId("dirt_with_grass");
+	content_t c_water_flowing = m_nodedef->getId("water_flowing");
+	int num_stone = 0;
+	int num_grass = 0;
+	int num_water_flowing = 0;
+	int num_air = 0;
+	int light_amount = 0;
+	v3s16 pp = floatToInt(player->getPosition(), BS);
+	s16 d = 8;
+	for(s16 x=-d; x<=d; x++)
+	for(s16 y=-d; y<=d; y++)
+	for(s16 z=-d; z<=d; z++){
+		v3s16 p = pp + v3s16(x,y,z);
+		MapNode n = m_env.getMap().getNodeNoEx(p);
+		if(n.getContent() == c_stone)
+			num_stone++;
+		if(n.getContent() == c_grass)
+			num_grass++;
+		if(n.getContent() == c_water_flowing)
+			num_water_flowing++;
+		if(n.getContent() == CONTENT_AIR)
+			num_air++;
+		light_amount += n.getLight(LIGHTBANK_DAY, m_nodedef);
+	}
+	int light_per_air = 15;
+	if(num_air != 0)
+		light_per_air = light_amount / num_air;
+	/*infostream<<"num_stone="<<num_stone
+				<<", num_grass="<<num_grass
+				<<", num_air="<<num_air
+				<<", light_per_air="<<light_per_air<<std::endl;*/
+	status.in_cave = (num_stone >= 3000 && num_grass <= 50 &&
+			light_per_air <= 8);
+	status.near_flowing_water = num_water_flowing >= 4;
+	
 	return status;
 }
 

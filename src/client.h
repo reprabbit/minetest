@@ -32,6 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gamedef.h"
 #include "inventorymanager.h"
 #include "filesys.h"
+#include "player.h" // PlayerControl
 
 struct MeshMakeData;
 class IGameDef;
@@ -163,6 +164,8 @@ struct PlayerEnvStatus
 	bool in_water_stable;
 	bool is_climbing;
 	bool swimming_up;
+	bool in_cave;
+	bool near_flowing_water;
 };
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef

@@ -241,6 +241,9 @@ public:
 	
 	PlayerControl control;
 
+	bool getSneakNodeExists(){ return m_sneak_node_exists; }
+	v3s16 getSneakNode(){ return m_sneak_node; }
+
 private:
 	// This is used for determining the sneaking range
 	v3s16 m_sneak_node;

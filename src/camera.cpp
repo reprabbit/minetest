@@ -28,6 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cmath>
 #include "settings.h"
 #include "itemdef.h" // For wield visualization
+#include "audio.h"
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control):
 	m_smgr(smgr),
@@ -171,7 +172,23 @@ void Camera::step(f32 dtime)
 		}
 		else
 		{
+			float was = m_view_bobbing_anim;
 			m_view_bobbing_anim = my_modf(m_view_bobbing_anim + offset);
+			bool step = false;
+			if(was < 0.5 && m_view_bobbing_anim >= 0.5)
+				step = true;
+			else if((was == 0.0 || (was >= 0.5 && was < 1.0))
+					&& m_view_bobbing_anim < 0.5)
+				step = true;
+			/*if(was < 0.25 && m_view_bobbing_anim >= 0.25)
+				step = true;
+			else if(was < 0.75 && m_view_bobbing_anim >= 0.75)
+				step = true;*/
+			if(step){
+				//actionstream<<"step!"<<std::endl;
+				Audio::system()->playerSound("walk")->play();
+				Audio::system()->playerSound("walk")->loop(false);
+			}
 		}
 	}
 

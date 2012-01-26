@@ -32,7 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <set>
 #include "common_irrlicht.h"
-#include "player.h"
 #include "map.h"
 #include <ostream>
 #include "utility.h"
@@ -45,6 +44,8 @@ class ServerActiveObject;
 typedef struct lua_State lua_State;
 class ITextureSource;
 class IGameDef;
+class Player;
+class LocalPlayer;
 
 class Environment
 {

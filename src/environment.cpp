@@ -38,6 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "main.h" // For g_settings, g_profiler
 #include "gamedef.h"
 #include "serverremoteplayer.h"
+#include "audio.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -1956,13 +1957,19 @@ void ClientEnvironment::step(float dtime)
 
 				lplayer->setSpeed(speed);
 			}
-
+			
+			bool was_touching_ground = lplayer->touching_ground;
 			/*
 				Move the lplayer.
 				This also does collision detection.
 			*/
 			lplayer->move(dtime_part, *m_map, position_max_increment,
 					&player_collisions);
+
+			if(lplayer->touching_ground && !was_touching_ground){
+				Audio::system()->playerSound("walk")->play();
+				Audio::system()->playerSound("walk")->loop(false);
+			}
 		}
 	}
 	while(dtime_downcount > 0.001);

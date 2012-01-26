@@ -670,6 +670,7 @@ void the_game(
 	// player sounds
 	// walk
 	Audio::system()->setPlayerSound("walk", "footstep");
+	Audio::system()->playerSound("walk")->loop(false);
 	// walking sound is always at feet position, which
 	// relative to camera/eyes/ears can be found is defined
 	// by the feet_eye_vector
@@ -1642,11 +1643,10 @@ void the_game(
 
 			// only let the walk sound be heard if moving
 			// and touching ground
-			// TODO change walk sound depending on ground
-			Audio::system()->playerSound("walk")->shouldPlay(
+			/*Audio::system()->playerSound("walk")->shouldPlay(
 				pes.touching_ground && (
 					control.up || control.down ||
-					control.left || control.right));
+					control.left || control.right));*/
 			// swim sound if moving in water
 			Audio::system()->playerSound("swim")->shouldPlay(
 				pes.in_water && (
@@ -1662,6 +1662,14 @@ void the_game(
 				if (!snd->isPlaying())
 					snd->play();
 				was_in_water = pes.in_water;
+			}
+			
+			if(pes.near_flowing_water){
+				Audio::system()->setAmbient("envnoise", "ambient_water_flow");
+			} else if(pes.in_cave){
+				Audio::system()->setAmbient("envnoise", "ambient_cave");
+			} else {
+				Audio::system()->setAmbient("envnoise", "ambient");
 			}
 #endif
 		}
@@ -1762,6 +1770,9 @@ void the_game(
 #if USE_AUDIO
 			// what are we standing on?
 			v3s16 pos_on = floatToInt(player_position-v3f(0,BS/2,0), BS);
+			// This gives a better node
+			if(player->getSneakNodeExists())
+				pos_on = player->getSneakNode();
 			try
 			{
 				MapNode n = client.getNode(pos_on);
