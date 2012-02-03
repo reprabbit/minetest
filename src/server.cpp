@@ -679,7 +679,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 				u32 max_emerge = 5;
 				// Make it more responsive when needing to generate stuff
 				if(surely_not_found_on_disk)
-					max_emerge = 2;
+					max_emerge = 1;
 				if(server->m_emerge_queue.peerItemCount(peer_id) < max_emerge)
 				{
 					//infostream<<"Adding block to emerge queue"<<std::endl;
@@ -2858,7 +2858,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(action == 0 || action == 2 || action == 3)
 		{
 			float d = player_pos.getDistanceFrom(pointed_pos_under);
-			float max_d = BS * 10; // Just some large enough value
+			float max_d = BS * 15; // Just some large enough value
 			if(d > max_d){
 				actionstream<<"Player "<<player->getName()
 						<<" tried to access "<<pointed.dump()
