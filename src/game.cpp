@@ -1817,7 +1817,10 @@ void the_game(
 		
 		//u32 t1 = device->getTimer()->getRealTime();
 		
-		f32 d = 4; // max. distance
+		f32 d = 4; // max. distance pointing digging dig creative
+        if (g_settings->getBool("creative_mode") == true){
+            d = 20.0;
+        }
 		core::line3d<f32> shootline(camera_position,
 				camera_position + camera_direction * BS * (d+1));
 
@@ -1923,7 +1926,7 @@ void the_game(
 			*/
 			
 			
-			if(nodig_delay_timer <= 0.0 && input->getLeftState())
+			if( input->getLeftState())  //nodig_delay_timer <= 0.0 &&
 			{
 				if(!digging)
 				{
@@ -1963,7 +1966,7 @@ void the_game(
 					dig_index = CRACK_ANIMATION_LENGTH;
 				}
 
-				if(dig_index < CRACK_ANIMATION_LENGTH)
+				if(dig_index < CRACK_ANIMATION_LENGTH && g_settings->getBool("creative_mode") == false)
 				{
 					//TimeTaker timer("client.setTempMod");
 					//infostream<<"dig_index="<<dig_index<<std::endl;
@@ -1984,13 +1987,13 @@ void the_game(
 
 					// We don't want a corresponding delay to
 					// very time consuming nodes
-					if(nodig_delay_timer > 0.5)
+					if(nodig_delay_timer > 0.005)
 					{
-						nodig_delay_timer = 0.5;
+						nodig_delay_timer = 0.005;
 					}
 					// We want a slight delay to very little
 					// time consuming nodes
-					float mindelay = 0.15;
+					float mindelay = 0.0015;
 					if(nodig_delay_timer < mindelay)
 					{
 						nodig_delay_timer = mindelay;
