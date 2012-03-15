@@ -1318,6 +1318,54 @@ void the_game(
 			a->from_i = client.getPlayerItem();
 			client.inventoryAction(a);
 		}
+
+
+///////////////////////////////////////////////////BIG GUN
+                else if(input->wasKeyDown(getKeySetting("keymap_smallgun")))
+                {
+                s32 gs=g_settings->getS32("gunsize");
+                        if(gs>0)
+                        {
+                                gs--;
+                                g_settings->set("gunsize",itos(gs));
+                                chat_lines.push_back(ChatLine(L"Gun Reduced"));
+                        }
+                        else
+                        {
+                                chat_lines.push_back(ChatLine(L"Gun at minimum"));
+                        }
+                }
+
+//			s16 range = g_settings->getS16("viewing_range_nodes_min");
+	//		s16 range_new = range + 10;
+		//	g_settings->set("viewing_range_nodes_min", itos(range_new));
+
+
+               else if(input->wasKeyDown(getKeySetting("keymap_biggun")))
+                {
+                s32 gs=g_settings->getS32("gunsize");
+                        if(gs<12)
+                        {
+                                gs++;
+                                g_settings->set("gunsize",itos(gs));
+                                chat_lines.push_back(ChatLine(L"Gun empowered"));
+                        }
+                        else
+                        {
+                                chat_lines.push_back(ChatLine(L"Gun at maximum"));
+                        }
+                }
+
+
+
+
+
+
+
+
+
+
+
 		else if(input->wasKeyDown(getKeySetting("keymap_inventory")))
 		{
 			infostream<<"the_game: "
@@ -1373,6 +1421,150 @@ void the_game(
 					&g_menumgr, dest,
 					L"/"))->drop();
 		}
+
+		else if(input->wasKeyDown(getKeySetting("keymap_reprap")))
+		{
+///////////////////////////////////////////////////////////////////////////////////PRINT STL FILE
+
+//test file, for debugging
+int print_material=2077; //cobble
+
+s32 platform_size=g_settings->getS32("build_platform_size");
+FILE * pFile;
+   pFile = fopen ("alpha.stl","w");
+fprintf (pFile, "solid reprap\n" );
+    for (s16 ry=0;ry<platform_size*2;ry++){
+        for (s16 rx=-platform_size;rx<platform_size;rx++){
+            for (s16 rz=-platform_size;rz<platform_size;rz++){
+        		MapNode n;
+		        try
+		        {
+			        n = client.getNode(v3s16(rx,ry,rz));
+		        }
+        		catch(InvalidPositionException &e)
+		        {
+        			continue;
+		        }
+
+                 //fprintf (pFile, "material %d\n", n.getContent()); /// To identify print materials
+               if (n.getContent() == print_material)
+               {
+
+
+MapNode b;
+
+		        try{b = client.getNode(v3s16(rx,ry,rz+1));}
+        		catch(InvalidPositionException &e) {continue;}
+               if (b.getContent() != print_material) {//Neighbor is not sand
+                   //Zplus
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(1),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(1),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+}
+		        try{b = client.getNode(v3s16(rx,ry,rz-1));}
+        		catch(InvalidPositionException &e) {continue;}
+               if (b.getContent() != print_material) {//Neighbor is not sand
+                   //Zminus
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(-1),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(-1),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+
+}
+		        try{b = client.getNode(v3s16(rx,ry+1,rz));}
+        		catch(InvalidPositionException &e) {continue;}
+               if (b.getContent() != print_material) {//Neighbor is not sand
+                   //TOP yplus
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(0),float(1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(0),float(1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+
+}
+		        try{b = client.getNode(v3s16(rx,ry-1,rz));}
+        		catch(InvalidPositionException &e) {continue;}
+               if (b.getContent() != print_material) {//Neighbor is not sand
+                   //Bottom
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(0),float(-1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry));
+ fprintf (pFile, "endloop\nendfacet\n" );
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(0),float(0),float(-1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry));
+ fprintf (pFile, "endloop\nendfacet\n" );
+}
+		        try{b = client.getNode(v3s16(rx+1,ry,rz));}
+        		catch(InvalidPositionException &e) {continue;}
+               if (b.getContent() != print_material) {//Neighbor is not sand
+
+                   //Xplus
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(1),float(0),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(1),float(0),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx+1),float(rz),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+
+}
+		        try{b = client.getNode(v3s16(rx-1,ry,rz));}
+        		catch(InvalidPositionException &e) {continue;}
+               if (b.getContent() != print_material) {//Neighbor is not sand
+                   //Xminus
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(-1),float(0),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+ fprintf (pFile, "facet normal %e %e %e\nouter loop\n", float(-1),float(0),float(0));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry+1));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz+1),float(ry));
+ fprintf (pFile, "vertex %e %e %e\n", float(rx),float(rz),float(ry+1));
+ fprintf (pFile, "endloop\nendfacet\n" );
+}
+
+
+
+              }
+            }
+        }
+    }
+
+fprintf (pFile, "endsolid reprap\n" );
+   fclose (pFile);
+}
+
+
+
+
+
+
+
 		else if(input->wasKeyDown(getKeySetting("keymap_freemove")))
 		{
 			if(g_settings->getBool("free_move"))
@@ -1817,10 +2009,8 @@ void the_game(
 		
 		//u32 t1 = device->getTimer()->getRealTime();
 		
-		f32 d = 4; // max. distance pointing digging dig creative
-        if (g_settings->getBool("creative_mode") == true){
-            d = 20.0;
-        }
+		f32 d = 11; // max. distance pointing digging dig creative
+   
 		core::line3d<f32> shootline(camera_position,
 				camera_position + camera_direction * BS * (d+1));
 
@@ -1843,9 +2033,8 @@ void the_game(
 			//dstream<<"Pointing at "<<pointed.dump()<<std::endl;
 		}
 
-		/*
-			Visualize selection
-		*/
+//	Visualize selection
+
 		if(should_show_hilightbox)
 			hilightboxes.push_back(hilightbox);
 
@@ -1926,7 +2115,7 @@ void the_game(
 			*/
 			
 			
-			if( input->getLeftState())  //nodig_delay_timer <= 0.0 &&
+			if( input->getLeftState() && nodig_delay_timer <= 0.0 )
 			{
 				if(!digging)
 				{
@@ -1955,7 +2144,7 @@ void the_game(
 					dig_time_complete = prop.time;
 				}
 
-				if(dig_time_complete >= 0.001)
+				if(dig_time_complete >= 0.001 )//&& g_settings->getBool("creative_mode") == false)
 				{
 					dig_index = (u16)((float)CRACK_ANIMATION_LENGTH
 							* dig_time/dig_time_complete);
@@ -1966,7 +2155,7 @@ void the_game(
 					dig_index = CRACK_ANIMATION_LENGTH;
 				}
 
-				if(dig_index < CRACK_ANIMATION_LENGTH && g_settings->getBool("creative_mode") == false)
+				if(dig_index < CRACK_ANIMATION_LENGTH )
 				{
 					//TimeTaker timer("client.setTempMod");
 					//infostream<<"dig_index="<<dig_index<<std::endl;
@@ -2157,7 +2346,6 @@ void the_game(
 		*/
 		if(farmesh)
 		{
-			farmesh_range = draw_control.wanted_range * 10;
 			if(draw_control.range_all && farmesh_range < 500)
 				farmesh_range = 500;
 			if(farmesh_range > 1000)

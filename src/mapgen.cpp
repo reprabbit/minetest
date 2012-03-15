@@ -17,6 +17,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+
+#include "main.h" // For g_settings
+
+#include "settings.h"
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
@@ -159,6 +163,35 @@ void make_tree(ManualMapVoxelManipulator &vmanip, v3s16 p0,
 		}
 	}
 }
+
+
+void make_cobble(ManualMapVoxelManipulator &vmanip, v3s16 p0,
+		bool is_apple_tree, INodeDefManager *ndef)
+{
+	MapNode cobblenode(LEGN(ndef, "CONTENT_COBBLE"));
+	
+	s16 trunk_h = myrand_range(4, 5);
+	v3s16 p1 = p0;
+    s16 d = 5;
+	p1.Y += d;
+
+		for(s16 z=-d; z<=d; z++)
+		for(s16 y=-d; y<=d; y++)
+		for(s16 x=-d; x<=d; x++)
+        	{
+                    v3s16 p(x,y,z);
+                	p += p1;        	
+            	if(vmanip.m_area.contains(p))
+        			vmanip.m_data[vmanip.m_area.index(p)] = cobblenode;
+        	}
+
+
+}
+
+
+
+
+
 
 static void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 		INodeDefManager *ndef)
@@ -881,7 +914,7 @@ static void make_dungeon1(VoxelManipulator &vmanip, PseudoRandom &random,
 	bool fits = false;
 	for(u32 i=0; i<100; i++)
 	{
-		roomsize = v3s16(random.range(4,8),random.range(4,6),random.range(4,8));
+		roomsize = v3s16(random.range(5,15),random.range(5,6),random.range(5,15));
 		roomplace = vmanip.m_area.MinEdge + v3s16(
 				random.range(0,areasize.X-roomsize.X-1),
 				random.range(0,areasize.Y-roomsize.Y-1),
@@ -922,7 +955,7 @@ static void make_dungeon1(VoxelManipulator &vmanip, PseudoRandom &random,
 	*/
 	v3s16 last_room_center = roomplace+v3s16(roomsize.X/2,1,roomsize.Z/2);
 	
-	u32 room_count = random.range(2,7);
+	u32 room_count = random.range(5,40);
 	for(u32 i=0; i<room_count; i++)
 	{
 		// Make a room to the determined place
@@ -939,7 +972,7 @@ static void make_dungeon1(VoxelManipulator &vmanip, PseudoRandom &random,
 		
 		// Determine walker start position
 
-		bool start_in_last_room = (random.range(0,2)!=0);
+		bool start_in_last_room = (random.range(0,6)!=0);
 		//bool start_in_last_room = true;
 
 		v3s16 walker_start_place;
@@ -963,7 +996,7 @@ static void make_dungeon1(VoxelManipulator &vmanip, PseudoRandom &random,
 		if(r == false)
 			return;
 		
-		if(random.range(0,1)==0)
+		if(random.range(0,7)>1)
 			// Make the door
 			make_door1(vmanip, doorplace, doordir, ndef);
 		else
@@ -977,7 +1010,7 @@ static void make_dungeon1(VoxelManipulator &vmanip, PseudoRandom &random,
 				corridor_end_dir, random, ndef);
 		
 		// Find a place for a random sized room
-		roomsize = v3s16(random.range(4,8),random.range(4,6),random.range(4,8));
+		roomsize = v3s16(random.range(5,12),random.range(5,8),random.range(5,12));
 		walker.setPos(corridor_end);
 		walker.setDir(corridor_end_dir);
 		r = walker.findPlaceForRoomDoor(roomsize, doorplace, doordir, roomplace);
@@ -1533,7 +1566,7 @@ void make_block(BlockMakeData *data)
 	// Maximum amount of ground above the bottom of the central block
 	s16 maximum_ground_depth = maximum_groundlevel - node_min.Y;
 
-	#if 1
+	#if 0
 	/*
 		Special case for high air or water: Just fill with air and water.
 	*/
@@ -1554,7 +1587,7 @@ void make_block(BlockMakeData *data)
 					if(vmanip.m_data[i].getContent() == CONTENT_IGNORE)
 					{
 						if(y <= WATER_LEVEL)
-							vmanip.m_data[i] = MapNode(LEGN(ndef, "CONTENT_WATERSOURCE"));
+							vmanip.m_data[i] = MapNode(LEGN(ndef, "CONTENT_MESE")); //WATERSOURCE
 						else
 							vmanip.m_data[i] = MapNode(CONTENT_AIR);
 					}
@@ -1665,11 +1698,16 @@ void make_block(BlockMakeData *data)
 	CONTENT_VARIABLE(ndef, stone_with_coal);
 	CONTENT_VARIABLE(ndef, stone_with_iron);
 	CONTENT_VARIABLE(ndef, mese);
+	CONTENT_VARIABLE(ndef, sandstone);
+
+	CONTENT_VARIABLE(ndef, brick);
 
 	/*
 		Make base ground level
 	*/
+s32 platform_size=g_settings->getS32("build_platform_size");
 
+platform_size=platform_size+1;
 	for(s16 x=node_min.X; x<=node_max.X; x++)
 	for(s16 z=node_min.Z; z<=node_max.Z; z++)
 	{
@@ -1684,21 +1722,50 @@ void make_block(BlockMakeData *data)
 				// Only modify places that have no content
 				if(vmanip.m_data[i].getContent() == CONTENT_IGNORE)
 				{
-					// First priority: make air and water.
-					// This avoids caves inside water.
-					if(all_is_ground_except_caves == false
-							&& val_is_ground(noisebuf_ground.get(x,y,z),
-							v3s16(x,y,z), data->seed) == false)
-					{
-						if(y <= WATER_LEVEL)
-							vmanip.m_data[i] = n_water_source;
-						else
-							vmanip.m_data[i] = n_air;
-					}
-					else if(noisebuf_cave.get(x,y,z) > CAVE_NOISE_THRESHOLD)
-						vmanip.m_data[i] = n_air;
-					else
-						vmanip.m_data[i] = n_stone;
+						
+						if(y < 0) // water level is wrong, stl's are offset
+                        {
+                            if (x >= -50 && x < 50 && z >= -50 && z < 50)
+                            {
+                                  if (x%10 == 0 || z%10 == 0)
+                                         {   
+                                                 if (x== 0 || z== 0)
+                                                      {   
+                                                        vmanip.m_data[i] = n_sandstone;
+                                                       }
+                                                    else{
+                                                        vmanip.m_data[i] = n_clay;
+                                                    }
+             
+                                         }else{
+						                    vmanip.m_data[i] = n_sandstone; 
+                                         }
+                             
+                            }
+                            else
+                            {
+                            vmanip.m_data[i] = n_air;
+                            }
+                        }
+						else{
+
+                                if(
+(x==platform_size && z==platform_size && y<=platform_size*2) ||
+(x==platform_size && z==-platform_size && y<=platform_size*2) ||
+(x==-platform_size && z==platform_size && y<=platform_size*2) ||
+(x==-platform_size && z==-platform_size && y<=platform_size*2) ||
+((x==platform_size || z==platform_size || x==-platform_size || z==-platform_size) && y==platform_size*2)
+)
+                                {
+                                                        vmanip.m_data[i] = n_sandstone;               
+							
+                                }
+                                else
+                                {
+                                    vmanip.m_data[i] = n_air;
+                                }
+                            }
+					
 				}
 			
 				data->vmanip->m_area.add_y(em, i, 1);
@@ -1761,10 +1828,10 @@ void make_block(BlockMakeData *data)
 	//if(myrand() % 3 == 0 && node_min.Y < approx_groundlevel)
 	//if(myrand() % 100 == 0 && node_min.Y < approx_groundlevel)
 	//float dungeon_rarity = g_settings.getFloat("dungeon_rarity");
-	float dungeon_rarity = 0.02;
+	float dungeon_rarity = 8.0;
 	if(((noise3d(blockpos.X,blockpos.Y,blockpos.Z,data->seed)+1.0)/2.0)
-			< dungeon_rarity
-			&& node_min.Y < approx_groundlevel)
+			< dungeon_rarity && 0==1 ////FALSE no dungeons
+			)// && node_min.Y < approx_groundlevel)
 	{
 		// Dungeon generator doesn't modify places which have this set
 		data->vmanip->clearFlag(VMANIP_FLAG_DUNGEON_INSIDE
@@ -1836,14 +1903,14 @@ void make_block(BlockMakeData *data)
 
 	/*
 		Add NC
-	*/
+	
 	{
 		PseudoRandom ncrandom(blockseed+9324342);
-		if(ncrandom.range(0, 1000) == 0 && blockpos.Y <= -3)
+		if(ncrandom.range(0, 10) == 0 && blockpos.Y <= -3)
 		{
 			make_nc(vmanip, ncrandom, ndef);
 		}
-	}
+	}*/
 	
 	/*
 		Add top and bottom side of water to transforming_liquid queue
@@ -1888,436 +1955,7 @@ void make_block(BlockMakeData *data)
 		}
 	}
 
-	/*
-		If close to ground level
-	*/
 
-	//if(abs(approx_ground_depth) < 30)
-	if(minimum_ground_depth < 5 && maximum_ground_depth > -5)
-	{
-		/*
-			Add grass and mud
-		*/
-
-		for(s16 x=node_min.X; x<=node_max.X; x++)
-		for(s16 z=node_min.Z; z<=node_max.Z; z++)
-		{
-			// Node position
-			v2s16 p2d(x,z);
-			{
-				bool possibly_have_sand = get_have_sand(data->seed, p2d);
-				bool have_sand = false;
-				u32 current_depth = 0;
-				bool air_detected = false;
-				bool water_detected = false;
-				bool have_clay = false;
-
-				// Use fast index incrementing
-				s16 start_y = node_max.Y+2;
-				v3s16 em = vmanip.m_area.getExtent();
-				u32 i = vmanip.m_area.index(v3s16(p2d.X, start_y, p2d.Y));
-				for(s16 y=start_y; y>=node_min.Y-3; y--)
-				{
-					if(vmanip.m_data[i].getContent() == c_water_source)
-						water_detected = true;
-					if(vmanip.m_data[i].getContent() == CONTENT_AIR)
-						air_detected = true;
-
-					if((vmanip.m_data[i].getContent() == c_stone
-							|| vmanip.m_data[i].getContent() == c_dirt_with_grass
-							|| vmanip.m_data[i].getContent() == c_dirt
-							|| vmanip.m_data[i].getContent() == c_sand
-							|| vmanip.m_data[i].getContent() == c_gravel
-							) && (air_detected || water_detected))
-					{
-						if(current_depth == 0 && y <= WATER_LEVEL+2
-								&& possibly_have_sand)
-							have_sand = true;
-						
-						if(current_depth < 4)
-						{
-							if(have_sand)
-							{
-								// Determine whether to have clay in the sand here
-								double claynoise = noise2d_perlin(
-										0.5+(float)p2d.X/500, 0.5+(float)p2d.Y/500,
-										data->seed+4321, 6, 0.95) + 0.5;
-				
-								have_clay = (y <= WATER_LEVEL) && (y >= WATER_LEVEL-2) && (
-									((claynoise > 0) && (claynoise < 0.04) && (current_depth == 0)) ||
-									((claynoise > 0) && (claynoise < 0.12) && (current_depth == 1))
-									);
-								if (have_clay)
-									vmanip.m_data[i] = MapNode(c_clay);
-								else
-									vmanip.m_data[i] = MapNode(c_sand);
-							}
-							#if 1
-							else if(current_depth==0 && !water_detected
-									&& y >= WATER_LEVEL && air_detected)
-								vmanip.m_data[i] = MapNode(c_dirt_with_grass);
-							#endif
-							else
-								vmanip.m_data[i] = MapNode(c_dirt);
-						}
-						else
-						{
-							if(vmanip.m_data[i].getContent() == c_dirt
-								|| vmanip.m_data[i].getContent() == c_dirt_with_grass)
-								vmanip.m_data[i] = MapNode(c_stone);
-						}
-
-						current_depth++;
-
-						if(current_depth >= 8)
-							break;
-					}
-					else if(current_depth != 0)
-						break;
-
-					data->vmanip->m_area.add_y(em, i, -1);
-				}
-			}
-		}
-
-		/*
-			Calculate some stuff
-		*/
-		
-		float surface_humidity = surface_humidity_2d(data->seed, p2d_center);
-		bool is_jungle = surface_humidity > 0.75;
-		// Amount of trees
-		u32 tree_count = block_area_nodes * tree_amount_2d(data->seed, p2d_center);
-		if(is_jungle)
-			tree_count *= 5;
-
-		/*
-			Add trees
-		*/
-		PseudoRandom treerandom(blockseed);
-		// Put trees in random places on part of division
-		for(u32 i=0; i<tree_count; i++)
-		{
-			s16 x = treerandom.range(node_min.X, node_max.X);
-			s16 z = treerandom.range(node_min.Z, node_max.Z);
-			//s16 y = find_ground_level(data->vmanip, v2s16(x,z));
-			s16 y = find_ground_level_from_noise(data->seed, v2s16(x,z), 4);
-			// Don't make a tree under water level
-			if(y < WATER_LEVEL)
-				continue;
-			// Make sure tree fits (only trees whose starting point is
-			// at this block are added)
-			if(y < node_min.Y || y > node_max.Y)
-				continue;
-			/*
-				Find exact ground level
-			*/
-			v3s16 p(x,y+6,z);
-			bool found = false;
-			for(; p.Y >= y-6; p.Y--)
-			{
-				u32 i = data->vmanip->m_area.index(p);
-				MapNode *n = &data->vmanip->m_data[i];
-				if(n->getContent() != CONTENT_AIR && n->getContent() != c_water_source && n->getContent() != CONTENT_IGNORE)
-				{
-					found = true;
-					break;
-				}
-			}
-			// If not found, handle next one
-			if(found == false)
-				continue;
-
-			{
-				u32 i = data->vmanip->m_area.index(p);
-				MapNode *n = &data->vmanip->m_data[i];
-
-				if(n->getContent() != c_dirt && n->getContent() != c_dirt_with_grass && n->getContent() != c_sand)
-						continue;
-
-				// Papyrus grows only on mud and in water
-				if(n->getContent() == c_dirt && y <= WATER_LEVEL)
-				{
-					p.Y++;
-					make_papyrus(vmanip, p, ndef);
-				}
-				// Trees grow only on mud and grass, on land
-				else if((n->getContent() == c_dirt || n->getContent() == c_dirt_with_grass) && y > WATER_LEVEL + 2)
-				{
-					p.Y++;
-					//if(surface_humidity_2d(data->seed, v2s16(x, y)) < 0.5)
-					if(is_jungle == false)
-					{
-						bool is_apple_tree;
-						if(myrand_range(0,4) != 0)
-							is_apple_tree = false;
-						else
-							is_apple_tree = noise2d_perlin(
-									0.5+(float)p.X/100, 0.5+(float)p.Z/100,
-									data->seed+342902, 3, 0.45) > 0.2;
-						make_tree(vmanip, p, is_apple_tree, ndef);
-					}
-					else
-						make_jungletree(vmanip, p, ndef);
-				}
-				// Cactii grow only on sand, on land
-				else if(n->getContent() == c_sand && y > WATER_LEVEL + 2)
-				{
-					p.Y++;
-					make_cactus(vmanip, p, ndef);
-				}
-			}
-		}
-
-		/*
-			Add jungle grass
-		*/
-		if(is_jungle)
-		{
-			PseudoRandom grassrandom(blockseed);
-			for(u32 i=0; i<surface_humidity*5*tree_count; i++)
-			{
-				s16 x = grassrandom.range(node_min.X, node_max.X);
-				s16 z = grassrandom.range(node_min.Z, node_max.Z);
-				s16 y = find_ground_level_from_noise(data->seed, v2s16(x,z), 4);
-				if(y < WATER_LEVEL)
-					continue;
-				if(y < node_min.Y || y > node_max.Y)
-					continue;
-				/*
-					Find exact ground level
-				*/
-				v3s16 p(x,y+6,z);
-				bool found = false;
-				for(; p.Y >= y-6; p.Y--)
-				{
-					u32 i = data->vmanip->m_area.index(p);
-					MapNode *n = &data->vmanip->m_data[i];
-					if(data->nodedef->get(*n).is_ground_content)
-					{
-						found = true;
-						break;
-					}
-				}
-				// If not found, handle next one
-				if(found == false)
-					continue;
-				p.Y++;
-				if(vmanip.m_area.contains(p) == false)
-					continue;
-				if(vmanip.m_data[vmanip.m_area.index(p)].getContent() != CONTENT_AIR)
-					continue;
-				/*p.Y--;
-				if(vmanip.m_area.contains(p))
-					vmanip.m_data[vmanip.m_area.index(p)] = c_dirt;
-				p.Y++;*/
-				if(vmanip.m_area.contains(p))
-					vmanip.m_data[vmanip.m_area.index(p)] = c_junglegrass;
-			}
-		}
-
-#if 0
-		/*
-			Add some kind of random stones
-		*/
-		
-		u32 random_stone_count = block_area_nodes *
-				randomstone_amount_2d(data->seed, p2d_center);
-		// Put in random places on part of division
-		for(u32 i=0; i<random_stone_count; i++)
-		{
-			s16 x = myrand_range(node_min.X, node_max.X);
-			s16 z = myrand_range(node_min.Z, node_max.Z);
-			s16 y = find_ground_level_from_noise(data->seed, v2s16(x,z), 1);
-			// Don't add under water level
-			/*if(y < WATER_LEVEL)
-				continue;*/
-			// Don't add if doesn't belong to this block
-			if(y < node_min.Y || y > node_max.Y)
-				continue;
-			v3s16 p(x,y,z);
-			// Filter placement
-			/*{
-				u32 i = data->vmanip->m_area.index(v3s16(p));
-				MapNode *n = &data->vmanip->m_data[i];
-				if(n->getContent() != c_dirt && n->getContent() != c_dirt_with_grass)
-					continue;
-			}*/
-			// Will be placed one higher
-			p.Y++;
-			// Add it
-			make_randomstone(data->vmanip, p);
-		}
-#endif
-
-#if 0
-		/*
-			Add larger stones
-		*/
-		
-		u32 large_stone_count = block_area_nodes *
-				largestone_amount_2d(data->seed, p2d_center);
-		//u32 large_stone_count = 1;
-		// Put in random places on part of division
-		for(u32 i=0; i<large_stone_count; i++)
-		{
-			s16 x = myrand_range(node_min.X, node_max.X);
-			s16 z = myrand_range(node_min.Z, node_max.Z);
-			s16 y = find_ground_level_from_noise(data->seed, v2s16(x,z), 1);
-			// Don't add under water level
-			/*if(y < WATER_LEVEL)
-				continue;*/
-			// Don't add if doesn't belong to this block
-			if(y < node_min.Y || y > node_max.Y)
-				continue;
-			v3s16 p(x,y,z);
-			// Filter placement
-			/*{
-				u32 i = data->vmanip->m_area.index(v3s16(p));
-				MapNode *n = &data->vmanip->m_data[i];
-				if(n->getContent() != c_dirt && n->getContent() != c_dirt_with_grass)
-					continue;
-			}*/
-			// Will be placed one lower
-			p.Y--;
-			// Add it
-			make_largestone(data->vmanip, p);
-		}
-#endif
-	}
-
-	/*
-		Add minerals
-	*/
-
-	{
-		PseudoRandom mineralrandom(blockseed);
-
-		/*
-			Add meseblocks
-		*/
-		for(s16 i=0; i<approx_ground_depth/4; i++)
-		{
-			if(mineralrandom.next()%50 == 0)
-			{
-				s16 x = mineralrandom.range(node_min.X+1, node_max.X-1);
-				s16 y = mineralrandom.range(node_min.Y+1, node_max.Y-1);
-				s16 z = mineralrandom.range(node_min.Z+1, node_max.Z-1);
-				for(u16 i=0; i<27; i++)
-				{
-					v3s16 p = v3s16(x,y,z) + g_27dirs[i];
-					u32 vi = vmanip.m_area.index(p);
-					if(vmanip.m_data[vi].getContent() == c_stone)
-						if(mineralrandom.next()%8 == 0)
-							vmanip.m_data[vi] = MapNode(c_mese);
-				}
-					
-			}
-		}
-		/*
-			Add others
-		*/
-		{
-			u16 a = mineralrandom.range(0,15);
-			a = a*a*a;
-			u16 amount = 20 * a/1000;
-			for(s16 i=0; i<amount; i++)
-			{
-				s16 x = mineralrandom.range(node_min.X+1, node_max.X-1);
-				s16 y = mineralrandom.range(node_min.Y+1, node_max.Y-1);
-				s16 z = mineralrandom.range(node_min.Z+1, node_max.Z-1);
-
-				u8 base_content = c_stone;
-				MapNode new_content(CONTENT_IGNORE);
-				u32 sparseness = 6;
-
-				if(noisebuf_ground_crumbleness.get(x,y+5,z) < -0.1)
-				{
-					new_content = MapNode(c_stone_with_coal);
-				}
-				else
-				{
-					if(noisebuf_ground_wetness.get(x,y+5,z) > 0.0)
-						new_content = MapNode(c_stone_with_iron);
-					/*if(noisebuf_ground_wetness.get(x,y,z) > 0.0)
-						vmanip.m_data[i] = MapNode(c_dirt);
-					else
-						vmanip.m_data[i] = MapNode(c_sand);*/
-				}
-				/*else if(noisebuf_ground_crumbleness.get(x,y,z) > 0.1)
-				{
-				}*/
-
-				if(new_content.getContent() != CONTENT_IGNORE)
-				{
-					for(u16 i=0; i<27; i++)
-					{
-						v3s16 p = v3s16(x,y,z) + g_27dirs[i];
-						u32 vi = vmanip.m_area.index(p);
-						if(vmanip.m_data[vi].getContent() == base_content)
-						{
-							if(mineralrandom.next()%sparseness == 0)
-								vmanip.m_data[vi] = new_content;
-						}
-					}
-				}
-			}
-		}
-		/*
-			Add coal
-		*/
-		//for(s16 i=0; i < MYMAX(0, 50 - abs(node_min.Y+8 - (-30))); i++)
-		//for(s16 i=0; i<50; i++)
-		u16 coal_amount = 30;
-		u16 coal_rareness = 60 / coal_amount;
-		if(coal_rareness == 0)
-			coal_rareness = 1;
-		if(mineralrandom.next()%coal_rareness == 0)
-		{
-			u16 a = mineralrandom.next() % 16;
-			u16 amount = coal_amount * a*a*a / 1000;
-			for(s16 i=0; i<amount; i++)
-			{
-				s16 x = mineralrandom.range(node_min.X+1, node_max.X-1);
-				s16 y = mineralrandom.range(node_min.Y+1, node_max.Y-1);
-				s16 z = mineralrandom.range(node_min.Z+1, node_max.Z-1);
-				for(u16 i=0; i<27; i++)
-				{
-					v3s16 p = v3s16(x,y,z) + g_27dirs[i];
-					u32 vi = vmanip.m_area.index(p);
-					if(vmanip.m_data[vi].getContent() == c_stone)
-						if(mineralrandom.next()%8 == 0)
-							vmanip.m_data[vi] = MapNode(c_stone_with_coal);
-				}
-			}
-		}
-		/*
-			Add iron
-		*/
-		u16 iron_amount = 8;
-		u16 iron_rareness = 60 / iron_amount;
-		if(iron_rareness == 0)
-			iron_rareness = 1;
-		if(mineralrandom.next()%iron_rareness == 0)
-		{
-			u16 a = mineralrandom.next() % 16;
-			u16 amount = iron_amount * a*a*a / 1000;
-			for(s16 i=0; i<amount; i++)
-			{
-				s16 x = mineralrandom.range(node_min.X+1, node_max.X-1);
-				s16 y = mineralrandom.range(node_min.Y+1, node_max.Y-1);
-				s16 z = mineralrandom.range(node_min.Z+1, node_max.Z-1);
-				for(u16 i=0; i<27; i++)
-				{
-					v3s16 p = v3s16(x,y,z) + g_27dirs[i];
-					u32 vi = vmanip.m_area.index(p);
-					if(vmanip.m_data[vi].getContent() == c_stone)
-						if(mineralrandom.next()%8 == 0)
-							vmanip.m_data[vi] = MapNode(c_stone_with_iron);
-				}
-			}
-		}
-	}
 
 }
 

@@ -2872,7 +2872,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(action == 0 || action == 2 || action == 3)
 		{
 			float d = player_pos.getDistanceFrom(pointed_pos_under);
-			float max_d = BS * 10; // Just some large enough value
+			float max_d = BS * 100; // Just some large enough value
 			if(d > max_d){
 				actionstream<<"Player "<<player->getName()
 						<<" tried to access "<<pointed.dump()
@@ -4029,8 +4029,8 @@ void Server::UpdateCrafting(u16 peer_id)
 	// Get a preview for crafting
 	ItemStack preview;
 	// No crafting in creative mode
-	if(g_settings->getBool("creative_mode") == false)
-		getCraftingResult(&player->inventory, preview, false, this);
+//	if(g_settings->getBool("creative_mode") == false)
+//		getCraftingResult(&player->inventory, preview, false, this);
 
 	// Put the new preview in
 	InventoryList *plist = player->inventory.getList("craftpreview");

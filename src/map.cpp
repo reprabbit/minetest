@@ -1166,9 +1166,38 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		This also clears the lighting.
 	*/
 
-	MapNode n;
-	n.setContent(replace_material);
-	setNode(p, n);
+//	MapNode n;
+//	n.setContent(replace_material);
+//	setNode(p, n);
+
+//*DO IT WITH A GUN   
+        s32 gunsize=g_settings->getS32("gunsize");
+        s32 gunsize2=gunsize+1;
+        s32 gs2=gunsize*gunsize*2;
+        MapNode n;
+        n.setContent(replace_material);
+        v3s16 yy = p + v3s16(0,0,0);
+        setNode(p, n);
+        s32 i2,j2,k2;
+        for(s32 i=-gunsize; i<gunsize2; i++){i2=i*i;
+        for(s32 j=-gunsize; j<gunsize2; j++){j2=j*j;
+        for(s32 k=-gunsize; k<gunsize2; k++){k2=k*k;
+
+        if (i2+j2+k2<=gs2){
+                yy = p + v3s16(i,j,k);
+                setNode(yy, n);
+        }
+}//k
+}//j
+}//i
+//*/
+
+
+
+
+
+
+
 
 	for(s32 i=0; i<2; i++)
 	{

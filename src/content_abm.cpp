@@ -257,6 +257,64 @@ public:
 	}
 };
 
+
+
+class MakeCobbleFromNyancatABM : public ActiveBlockModifier
+{
+private:
+public:
+	virtual std::set<std::string> getTriggerContents()
+	{
+		std::set<std::string> s;
+		s.insert("nyancat");
+		return s;
+	}
+	virtual float getTriggerInterval()
+	{ return 2.0; }
+	virtual u32 getTriggerChance()
+	{ return 1; }
+	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
+			u32 active_object_count, u32 active_object_count_wider)
+	{
+		INodeDefManager *ndef = env->getGameDef()->ndef();
+		ServerMap *map = &env->getServerMap();
+		
+		actionstream<<"A Nyancat explodes into cobble at "
+				<<PP(p)<<std::endl;
+
+		core::map<v3s16, MapBlock*> modified_blocks;
+		v3s16 tree_p = p;
+		ManualMapVoxelManipulator vmanip(map);
+		v3s16 tree_blockp = getNodeBlockPos(tree_p);
+		vmanip.initialEmerge(tree_blockp - v3s16(1,1,1), tree_blockp + v3s16(1,1,1));
+		bool is_apple_tree = myrand()%4 == 0;
+		mapgen::make_cobble(vmanip, tree_p, is_apple_tree, ndef);
+		vmanip.blitBackAll(&modified_blocks);
+
+		// update lighting
+		core::map<v3s16, MapBlock*> lighting_modified_blocks;
+		for(core::map<v3s16, MapBlock*>::Iterator
+			i = modified_blocks.getIterator();
+			i.atEnd() == false; i++)
+		{
+			lighting_modified_blocks.insert(i.getNode()->getKey(), i.getNode()->getValue());
+		}
+		map->updateLighting(lighting_modified_blocks, modified_blocks);
+
+		// Send a MEET_OTHER event
+		MapEditEvent event;
+		event.type = MEET_OTHER;
+		for(core::map<v3s16, MapBlock*>::Iterator
+			i = modified_blocks.getIterator();
+			i.atEnd() == false; i++)
+		{
+			v3s16 p = i.getNode()->getKey();
+			event.modified_blocks.insert(p, true);
+		}
+		map->dispatchEvent(&event);
+	}
+};
+
 void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef)
 {
 	env->addActiveBlockModifier(new GrowGrassABM());
@@ -264,6 +322,7 @@ void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef)
 	env->addActiveBlockModifier(new SpawnRatsAroundTreesABM());
 	env->addActiveBlockModifier(new SpawnInCavesABM());
 	env->addActiveBlockModifier(new MakeTreesFromSaplingsABM());
+	env->addActiveBlockModifier(new MakeCobbleFromNyancatABM());
 }
 
 

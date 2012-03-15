@@ -45,7 +45,9 @@ namespace mapgen
 	// Add a tree
 	void make_tree(ManualMapVoxelManipulator &vmanip, v3s16 p0,
 			bool is_apple_tree, INodeDefManager *ndef);
-	
+    //Nyancat Cobble Bomb
+	void make_cobble(ManualMapVoxelManipulator &vmanip, v3s16 p0,
+			bool is_apple_tree, INodeDefManager *ndef);
 	/*
 		These are used by FarMesh
 	*/

@@ -44,6 +44,14 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_freemove", "KEY_KEY_K");
 	settings->setDefault("keymap_fastmove", "KEY_KEY_J");
 	settings->setDefault("keymap_screenshot", "KEY_F12");
+
+    settings->setDefault("gunsize", "0");
+    settings->setDefault("build_platform_size", "30");
+    settings->setDefault("keymap_smallgun", "KEY_KEY_5");
+    settings->setDefault("keymap_biggun", "KEY_KEY_6");
+
+	settings->setDefault("keymap_reprap", "KEY_F11");
+
 	settings->setDefault("keymap_toggle_hud", "KEY_F1");
 	settings->setDefault("keymap_toggle_chat", "KEY_F2");
 	settings->setDefault("keymap_toggle_force_fog_off", "KEY_F3");
@@ -57,7 +65,7 @@ void set_default_settings(Settings *settings)
 
 	// Show debug info by default?
 	#ifdef NDEBUG
-	settings->setDefault("show_debug", "false");
+	settings->setDefault("show_debug", "true");
 	#else
 	settings->setDefault("show_debug", "true");
 	#endif
@@ -81,9 +89,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_texture_atlas", "true");
 	settings->setDefault("texture_path", "");
 	settings->setDefault("video_driver", "opengl");
-	settings->setDefault("free_move", "false");
+	settings->setDefault("free_move", "true");
 	settings->setDefault("continuous_forward", "false");
-	settings->setDefault("fast_move", "false");
+	settings->setDefault("fast_move", "true");
 	settings->setDefault("invert_mouse", "false");
 	settings->setDefault("enable_farmesh", "false");
 	settings->setDefault("enable_clouds", "true");
@@ -97,11 +105,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "100");
 	settings->setDefault("strict_protocol_version_checking", "true");
-	settings->setDefault("creative_mode", "false");
+	settings->setDefault("creative_mode", "true");
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("only_peaceful_mobs", "false");
 	settings->setDefault("fixed_map_seed", "");
-	settings->setDefault("give_initial_stuff", "false");
+	settings->setDefault("give_initial_stuff", "true");
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "build, shout");
 	settings->setDefault("unlimited_player_transfer_distance", "true");
